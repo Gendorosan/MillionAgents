@@ -1,0 +1,82 @@
+№ 2.1
+CREATE TABLE reports
+
+(
+
+    id int PRIMARY KEY,
+
+    user_id int,
+
+    reward int,
+
+    created_at timestamp without time zone
+
+)
+
+Необходимо: выбрать всех пользователей (user_id), которые **впервые** создали отчет в 2021-м году, 
+и подсчитать сумму вознаграждений (reward) за 2022-й год в одном запросе.
+
+Поскольку нам нужны пользователели, которые ВПЕРВЫЕ создали отчет в 2021 году, то нужно брать минимальную дату
+Решение через вложенный запрос с двумя вложеннымы запросами я считаю крайне некрасивым, но другого придумать не смог
+
+select
+  r1.user_id,
+  sum(r1.reward)
+from reports r1
+where
+      r1.user_id = (
+          select user_id
+          from reports r2
+          where r1.user_id = r2.user_id
+            and (select min(created_at) from reports r3 where r1.user_id = r3.user_id) > '2020.12.31'
+            and (select min(created_at) from reports r3 where r1.user_id = r3.user_id)  < '2022.01.01'
+              )
+  and created_at > '2021.12.31'
+  and created_at < '2023.01.01'
+group by user_id;
+
+№ 2.2
+CREATE TABLE pos
+
+(
+
+    id int PRIMARY KEY,
+
+    title character varying
+
+)
+
+CREATE TABLE reports
+
+(
+
+    id int PRIMARY KEY,
+
+    barcode character varying,
+
+    price float,
+
+    pos_id int
+
+)
+
+Необходимо: использовав агрегатные функции, выбрать все шк и цены (reports.barcode, reports.price) с одинаковыми названиями точек продаж (pos.title).
+
+Само задание звучит некорректно, какие тут нужны агрегатные функции, если вывести надо "ВСЕ шк и цены"? Я могу вывести количество штришкодов и сумму цен по точке продажи (1), 
+а могу вывести все штрихкоды и цены, как и просят в задании, в таком случае агрегатные функции будут не нужны, но и группировки не будет (2)
+
+(1)
+select 
+  count(barcode),
+  sum(price) 
+from reports 
+group by pos_id
+
+(2)
+select 
+  rep.barcode,
+  rep.price,
+  pos.title
+from reports rep
+inner join pos p on rep.pos_id = p.pos_id
+order by p.title
